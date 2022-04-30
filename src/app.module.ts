@@ -7,7 +7,21 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
 import { environments } from './environments';
+import { DatabaseModule } from './database/database.module';
 import projectConfig from './config';
+
+/**
+ * Forma mas facil de realizar la conexion.
+ * el "client" debe ser el que entre al Injectable
+ */
+// async function run() {
+//   await client.connect();
+//   const database = client.db('jose-store');
+//   const taskCollection = database.collection('tasks');
+//   const tasks = await taskCollection.find().toArray();
+//   console.log(tasks);
+// }
+// run();
 
 //Supongamos queremos inyectar la llave para la api en todos nuestros modulos.
 const API_KEY = '123456';
@@ -23,11 +37,13 @@ const API_KEY_PROD = 'estoy en prod';
       validationSchema: Joi.object({
         API_KEY: Joi.string().required(),
         DB_NAME: Joi.string().required(),
-        DB_PORT: Joi.number().required(),
+        //DB_PORT: Joi.string().required(),
+        //PORT: Joi.string().required(),
       }),
     }),
     UsersModule,
     ProductsModule,
+    DatabaseModule,
   ],
   controllers: [AppController],
   providers: [
