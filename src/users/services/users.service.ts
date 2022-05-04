@@ -1,28 +1,34 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { randomInt } from 'crypto';
-import { User, NewUser, UpdateUser } from '../entities/user.entity';
-import { Order } from '../entities/order.entity';
+import { InjectModel } from '@nestjs/mongoose';
+
+import { Model } from 'mongoose';
+
+import { User } from '../entities/user.entity';
+import { CreateUserDto, UpdateUserDto } from './../dtos/users.dto';
 import { ProductsService } from './../../products/services/products.service';
 
 @Injectable()
 export class UsersService {
   constructor(
-    private configService: ConfigService,
-    private productsService: ProductsService,
+    //private configService: ConfigService,
+    //private productsService: ProductsService,
+    @InjectModel(User.name) private userModel: Model<User>,
   ) {}
 
-  private users: User[] = [];
-  getAll(): User[] {
-    const apyKey = this.configService.get('API_KEY');
-    const dbName = this.configService.get('DATABASE_NAME');
-    console.log(apyKey, dbName);
+  //private users: User[] = [];
 
-    return this.users;
+  async getAll(): Promise<User[]> {
+    // const apyKey = this.configService.get('API_KEY');
+    // const dbName = this.configService.get('DATABASE_NAME');
+    // console.log(apyKey, dbName);
+    return await this.userModel.find().exec();
+    //return this.users;
   }
 
-  getOne(userId: User['id']): User {
-    const user = this.users.find((user) => user.id === userId);
+  async getOne(userId: string): Promise<User> {
+    //const user = this.users.find((user) => user.id === userId);
+    const user = await this.userModel.findById(userId).exec();
     if (!user) {
       throw new NotFoundException('No existe este usuario');
     } else {
@@ -30,40 +36,35 @@ export class UsersService {
     }
   }
 
-  createUser(body: NewUser): User {
-    const newUser = {
-      id: randomInt(100, 120),
-      ...body,
-    };
-    this.users.push(newUser);
-    return newUser;
+  async createUser(body: CreateUserDto): Promise<User> {
+    const user: User = await this.userModel.create(body);
+    return user.save();
   }
 
-  updateUser(userId: User['id'], changes: UpdateUser): User {
-    const index = this.users.findIndex((user) => user.id === userId);
-    const info = this.users[index];
-    this.users[index] = {
-      ...info,
-      ...changes,
-    };
-    return this.users[index];
+  async updateUser(userId: string, changes: UpdateUserDto): Promise<User> {
+    const user = await this.userModel.findByIdAndUpdate(
+      userId,
+      { $set: changes },
+      { new: true },
+    );
+    if (!user) {
+      throw new NotFoundException(`No existe el producto con ID: ${userId}`);
+    }
+    return user;
   }
 
-  deleteUser(userId: User['id']): User {
-    const index = this.users.findIndex((user) => user.id === userId);
-    const info = this.users[index];
-    this.users.splice(index, 1);
-    return info;
+  async deleteUser(userId: string): Promise<User> {
+    return await this.userModel.findByIdAndDelete(userId);
   }
 
-  getOrdersByUser(userId: User['id']): Order {
-    const user = this.getOne(userId);
-    console.log(user);
+  // async getOrdersByUser(userId: User['id']) {
+  //   const user = this.getOne(userId);
+  //   console.log(user);
 
-    return {
-      date: new Date(),
-      user,
-      products: this.productsService.findAll(),
-    };
-  }
+  //   return {
+  //     date: new Date(),
+  //     user,
+  //     products: await this.productsService.findAll(),
+  //   };
+  // }
 }

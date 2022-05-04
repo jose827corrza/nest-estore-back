@@ -1,11 +1,33 @@
 import { Module, Global } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 
 import { MongoClient } from 'mongodb';
 import projectConfig from './../config';
 
 @Global()
 @Module({
+  imports: [
+    //esta forma deja todo explicito :c
+    // MongooseModule.forRoot('mongodb://localhost:27017', {
+    //   user: 'root',
+    //   pass: 'root',
+    //   dbName: 'jose-store',
+    // }),
+    MongooseModule.forRootAsync({
+      useFactory: (configService: ConfigType<typeof projectConfig>) => {
+        const { connection, dbName, dbPassword, dbUser, host, port } =
+          configService.mongo;
+        return {
+          uri: `${connection}://${host}:${port}`,
+          user: dbUser,
+          pass: dbPassword,
+          dbName,
+        };
+      },
+      inject: [projectConfig.KEY],
+    }),
+  ],
   providers: [
     // {
     //   provide: 'API_KEY',

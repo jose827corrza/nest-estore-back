@@ -8,58 +8,62 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { ParseIntPipe } from '../../shared/parse-int.pipe';
-import { User, NewUser, UpdateUser } from '../entities/user.entity';
+//import { ParseIntPipe } from '../../shared/parse-int.pipe';
+import { User } from '../entities/user.entity';
 import { UsersService } from '../services/users.service';
 import { CreateUserDto, UpdateUserDto } from '../dtos/users.dto';
+import { MongoIdPipe } from './../../shared/mongo-id.pipe';
 
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
   @Get('/')
-  getAll(@Query('limit') limit = 10, @Query('offset') offset = 0): User[] {
+  async getAll(
+    @Query('limit') limit = 10,
+    @Query('offset') offset = 0,
+  ): Promise<User[]> {
     //Haciendo destructuring, pero puede ser mejor especificar mejor cada query
     //const { limit = 10, offset = 0 } = queries;
-    return this.usersService.getAll();
+    return await this.usersService.getAll();
   }
 
   @Post()
-  create(@Body() payload: CreateUserDto): User {
+  async create(@Body() payload: CreateUserDto): Promise<User> {
     // return {
     //   mensaje: 'creado paps',
     //   payload: payload,
     // };
-    return this.usersService.createUser(payload);
+    return await this.usersService.createUser(payload);
   }
 
   @Get('/:userId')
-  getOne(@Param('userId', ParseIntPipe) userId: User['id']): User {
+  async getOne(@Param('userId', MongoIdPipe) userId: string) {
     //return `Estas en el producto ${productId}`;
-    return this.usersService.getOne(userId);
+    return await this.usersService.getOne(userId);
   }
 
   @Put('/:userId')
-  update(
-    @Param('userId', ParseIntPipe) userId: User['id'],
+  async update(
+    @Param('userId', MongoIdPipe) userId: string,
     @Body() payload: UpdateUserDto,
-  ): User {
+  ): Promise<User> {
     // return {
     //   mensaje: 'actualizado paps',
     //   payload: payload,
     // };
-    return this.usersService.updateUser(userId, payload);
+    return await this.usersService.updateUser(userId, payload);
   }
   @Delete('/:userId')
-  delete(@Param('userId', ParseIntPipe) userId: User['id']): User {
+  async delete(@Param('userId', MongoIdPipe) userId: string): Promise<User> {
     // return {
     //   mensaje: 'eliminado paps',
     //   productId: productId,
     // };
-    return this.usersService.deleteUser(userId);
+    return await this.usersService.deleteUser(userId);
   }
 
-  @Get(':id/orders')
-  getOrders(@Param('id', ParseIntPipe) id: User['id']) {
-    return this.usersService.getOrdersByUser(id);
-  }
+  // @Get(':id/orders')
+  // getOrders(@Param('id') id: string) {
+  //   return this.usersService.getOrdersByUser(id);
+  // }
 }
