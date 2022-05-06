@@ -1,43 +1,50 @@
-import { Injectable } from '@nestjs/common';
-import { randomInt } from 'crypto';
-import { CreateBrandDto, UpdateBrandDto } from '../dtos/brands.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { timeStamp } from 'console';
+
+import { Model } from 'mongoose';
+import {
+  CreateBrandDto,
+  FilterBrandDto,
+  UpdateBrandDto,
+} from '../dtos/brands.dto';
 import { Brand } from '../entities/brands.entity';
 
 @Injectable()
 export class BrandsService {
-  private brands: Brand[] = [];
+  constructor(@InjectModel(Brand.name) private brandModel: Model<Brand>) {}
 
-  getAll(): Brand[] {
-    return this.brands;
+  async getAll(params?: FilterBrandDto) {
+    return await this.brandModel.find().exec();
   }
 
-  getOne(brandId: Brand['id']): Brand {
-    return this.brands.find((brand) => brand.id === brandId);
+  async getOne(brandId: string) {
+    const brand = await this.brandModel.findById(brandId).exec();
+    if (!brand) {
+      throw new NotFoundException(`No existe esta marca con ID: ${brandId}`);
+    } else {
+      return brand;
+    }
   }
 
-  update(brandId: Brand['id'], changes: UpdateBrandDto): Brand {
-    const brand = this.getOne(brandId);
-    const index = this.brands.findIndex((brand) => brand.id === brandId);
-    this.brands[index] = {
-      ...brand,
-      ...changes,
-    };
-    return this.brands[index];
-  }
-
-  delete(brandId: Brand['id']): Brand {
-    const brand = this.getOne(brandId);
-    const index = this.brands.findIndex((brand) => brand.id === brandId);
-    this.brands.splice(index, 1);
+  async update(brandId: string, changes: UpdateBrandDto) {
+    const brand = await this.brandModel.findByIdAndUpdate(
+      brandId,
+      { $set: changes },
+      { new: true },
+    );
+    if (!brand) {
+      throw new NotFoundException(`No existe una marca con ID:${brandId}`);
+    }
     return brand;
   }
 
-  create(data: CreateBrandDto): Brand {
-    const newBrand = {
-      id: randomInt(4),
-      ...data,
-    };
-    this.brands.push(newBrand);
-    return newBrand;
+  async delete(brandId: string) {
+    return await this.brandModel.findByIdAndDelete(brandId);
+  }
+
+  create(data: CreateBrandDto) {
+    const newBrand: Brand = new this.brandModel(data);
+    return newBrand.save();
   }
 }

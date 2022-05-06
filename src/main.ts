@@ -6,7 +6,11 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }), //el primero descarta campos de mas, el segundo descarta y alerta
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transformOptions: { enableImplicitConversion: true },
+    }), //el primero descarta campos de mas, el segundo descarta y alerta
   );
 
   const config = new DocumentBuilder()
